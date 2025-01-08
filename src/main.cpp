@@ -18,6 +18,8 @@ int main()
     vector<vector<bool>> squareStates(rows, vector<bool>(cols, false));
     vector<pair<int, int>> activeParticles;
 
+    sf::RenderTexture staticCanvas({ static_cast<unsigned int>(windowWidth), static_cast<unsigned int>(windowHeight) });
+
     while (window.isOpen())
     {
         while (window.pollEvent()) while (const optional event = window.pollEvent()) if (event->is<sf::Event::Closed>()) window.close();
@@ -40,73 +42,78 @@ int main()
         mt19937 gen(rd());
         uniform_int_distribution<> dist(0, 1);
 
-        vector<pair<int, int>> newActiveParticles;
-        for (auto [row, col] : activeParticles)
+        std::vector<std::pair<int, int>> newActiveParticles; // Holds newly moved particles
+
+        // Move particles from top to bottom, left to right
+        for (int row = rows - 2; row >= 0; --row)
         {
-            if (row < rows - 1 && !squareStates[row + 1][col])
+            for (int col = 0; col < cols; ++col)
             {
-                squareStates[row + 1][col] = true;
-                squareStates[row][col] = false;
-                newActiveParticles.emplace_back(row + 1, col);
-            }
-            else
-            {
-                bool checkLeftFirst = dist(gen);
-                if (checkLeftFirst)
+                if (squareStates[row][col]) // Particle is active
                 {
-                    if (col > 0 && row < rows - 1 && !squareStates[row + 1][col - 1])
+                    bool moved = false;
+
+                    // Try to move the particle down if space is available
+                    if (row + 1 < rows && !squareStates[row + 1][col])
+                    {
+                        squareStates[row + 1][col] = true;
+                        squareStates[row][col] = false;
+                        newActiveParticles.emplace_back(row + 1, col);
+                        moved = true;
+                    }
+                    // If not, try left-down
+                    else if (col > 0 && row + 1 < rows && !squareStates[row + 1][col - 1])
                     {
                         squareStates[row + 1][col - 1] = true;
                         squareStates[row][col] = false;
                         newActiveParticles.emplace_back(row + 1, col - 1);
+                        moved = true;
                     }
-                    else if (col < cols - 1 && row < rows - 1 && !squareStates[row + 1][col + 1])
+                    // If not, try right-down
+                    else if (col < cols - 1 && row + 1 < rows && !squareStates[row + 1][col + 1])
                     {
                         squareStates[row + 1][col + 1] = true;
                         squareStates[row][col] = false;
                         newActiveParticles.emplace_back(row + 1, col + 1);
+                        moved = true;
                     }
-                    else if (row < rows - 1)
+
+                    // If it can't move anywhere, mark it as static
+                    if (!moved)
                     {
-                        newActiveParticles.emplace_back(row, col);
-                    }
-                }
-                else
-                {
-                    if (col < cols - 1 && row < rows - 1 && !squareStates[row + 1][col + 1])
-                    {
-                        squareStates[row + 1][col + 1] = true;
-                        squareStates[row][col] = false;
-                        newActiveParticles.emplace_back(row + 1, col + 1);
-                    }
-                    else if (col > 0 && row < rows - 1 && !squareStates[row + 1][col - 1])
-                    {
-                        squareStates[row + 1][col - 1] = true;
-                        squareStates[row][col] = false;
-                        newActiveParticles.emplace_back(row + 1, col - 1);
-                    }
-                    else if (row < rows - 1)
-                    {
-                        newActiveParticles.emplace_back(row, col);
+                        // Mark as processed (static)
+                        // These particles stay in place and should be rendered as static (white)
                     }
                 }
             }
         }
-        activeParticles = move(newActiveParticles);
 
+        // At this point, only add new active particles to activeParticles and keep processed ones out of the loop.
+        activeParticles = newActiveParticles;
+
+        // Draw active particles and static ones
         window.clear();
 
+        // Draw active particles as usual
         sf::RectangleShape square(sf::Vector2f(static_cast<float>(squareSize), static_cast<float>(squareSize)));
         square.setOutlineThickness(1.f);
         square.setOutlineColor(sf::Color::White);
 
+        for (auto [row, col] : activeParticles)
+        {
+            square.setFillColor(sf::Color::White);  // Active particle color
+            square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize), static_cast<float>(row * squareSize)));
+            window.draw(square);
+        }
+
+        // Now render all static particles (those that are stuck) in white
         for (int row = 0; row < rows; ++row)
         {
             for (int col = 0; col < cols; ++col)
             {
-                if (squareStates[row][col])
+                if (squareStates[row][col]) // Static square
                 {
-                    square.setFillColor(sf::Color::White);
+                    square.setFillColor(sf::Color::White);  // Static particle color (white)
                     square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize), static_cast<float>(row * squareSize)));
                     window.draw(square);
                 }
