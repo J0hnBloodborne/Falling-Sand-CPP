@@ -121,7 +121,7 @@ int main()
 
             if (particlesMoved) {
                 // Only draw particles that just became static
-                for (const auto& [row, col] : activeParticles) {
+                for (auto [row, col] : activeParticles) {
                     bool found = false;
                     for (const auto& [newRow, newCol] : newActiveParticles) {
                         if (row == newRow && col == newCol) {
@@ -150,7 +150,7 @@ int main()
 
         // Draw active particles to the frame buffer
         square.setFillColor(sf::Color::White);
-        for (const auto& [row, col] : activeParticles)
+        for (auto [row, col] : activeParticles)
         {
             square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
                 static_cast<float>(row * squareSize)));
