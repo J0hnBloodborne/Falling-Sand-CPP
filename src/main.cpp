@@ -63,16 +63,15 @@ int main()
             }
         }
 
-        vector<pair<int, int>> newActiveParticles; // Holds newly moved particles
+        vector<pair<int, int>> newActiveParticles;
         bool particlesMoved = false;
 
         // If there are active particles, move them
         if (!activeParticles.empty())
         {
             // Move particles and update square states
-            for (size_t i = 0; i < activeParticles.size(); ++i)
+            for (const auto& [row, col] : activeParticles)
             {
-                auto [row, col] = activeParticles[i];
                 bool moved = false;
                 // Try to move the particle down
                 if (row + 1 < rows && !squareStates[row + 1][col])
@@ -101,9 +100,8 @@ int main()
                     moved = true;
                     particlesMoved = true;
                 }
-                // If particle didn't move, it becomes static
+                // If particle didn't move, draw it to static canvas
                 if (!moved) {
-                    // Draw it to the static canvas
                     square.setFillColor(sf::Color::White);
                     square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
                         static_cast<float>(row * squareSize)));
@@ -115,24 +113,21 @@ int main()
             activeParticles = newActiveParticles;
 
             if (particlesMoved) {
-                // Update the static canvas to show all static particles
-                for (int row = 0; row < rows; ++row) {
-                    for (int col = 0; col < cols; ++col) {
-                        if (squareStates[row][col]) {
-                            bool isActive = false;
-                            for (const auto& [activeRow, activeCol] : activeParticles) {
-                                if (row == activeRow && col == activeCol) {
-                                    isActive = true;
-                                    break;
-                                }
-                            }
-                            if (!isActive) {
-                                square.setFillColor(sf::Color::White);
-                                square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
-                                    static_cast<float>(row * squareSize)));
-                                staticCanvas.draw(square);
-                            }
+                // Only draw particles that just became static
+                for (const auto& [row, col] : activeParticles) {
+                    bool found = false;
+                    for (const auto& [newRow, newCol] : newActiveParticles) {
+                        if (row == newRow && col == newCol) {
+                            found = true;
+                            break;
                         }
+                    }
+                    // If particle isn't in new active list, it became static
+                    if (!found) {
+                        square.setFillColor(sf::Color::White);
+                        square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
+                            static_cast<float>(row * squareSize)));
+                        staticCanvas.draw(square);
                     }
                 }
                 staticCanvas.display();
