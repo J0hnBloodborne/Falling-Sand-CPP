@@ -20,11 +20,17 @@ sf::Color getHueColor(int particleCount)
     return sf::Color(red, green, blue);
 }
 
+void resetGrid(vector<vector<bool>>& squareStates, vector<pair<int, int>>& activeParticles, int rows, int cols)
+{
+    squareStates = vector<vector<bool>>(rows, vector<bool>(cols, false));
+    activeParticles.clear();
+}
+
 int main()
 {
     int windowWidth = 800;
     int windowHeight = 600;
-    int squareSize = 10;
+    int squareSize = 5;
     int rows = windowHeight / squareSize;
     int cols = windowWidth / squareSize;
     int totalParticles = 0;
@@ -62,7 +68,20 @@ int main()
 
     while (window.isOpen())
     {
-        while (window.pollEvent()) while (const optional event = window.pollEvent()) if (event->is<sf::Event::Closed>()) window.close();
+        while (window.pollEvent())
+        {
+            while (const optional event = window.pollEvent())
+            {
+                if (event->is<sf::Event::Closed>()) window.close();
+                
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+                {
+                    resetGrid(squareStates, activeParticles, rows, cols);
+                    totalParticles = 0;
+                    staticCanvas.clear(sf::Color::Black);
+                }
+            }
+        }
 
         if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
         {
