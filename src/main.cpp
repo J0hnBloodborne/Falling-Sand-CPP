@@ -24,33 +24,31 @@ int main()
 
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dist(-1, 1); // Random horizontal movement (-1, 0, or 1)
+    uniform_int_distribution<> dist(-1, 1);
 
-    // Create a square shape for rendering
     sf::RectangleShape square(sf::Vector2f(static_cast<float>(squareSize), static_cast<float>(squareSize)));
        
-    // Draw static particles to staticCanvas once
-    staticCanvas.clear(sf::Color::Black); // Clear background (could be transparent if needed)
+    staticCanvas.clear(sf::Color::Black);
     frameBuffer.clear(sf::Color::Black);
+
     for (int row = 0; row < rows; ++row)
     {
         for (int col = 0; col < cols; ++col)
         {
-            if (squareStates[row][col]) // Static square
+            if (squareStates[row][col]) 
             {
-                square.setFillColor(sf::Color::White);  // Static particles color
+                square.setFillColor(sf::Color::White); 
                 square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize), static_cast<float>(row * squareSize)));
                 staticCanvas.draw(square);
             }
         }
     }
-    staticCanvas.display();  // Ensure the staticCanvas is rendered
+    staticCanvas.display();
 
     while (window.isOpen())
     {
         while (window.pollEvent()) while (const optional event = window.pollEvent()) if (event->is<sf::Event::Closed>()) window.close();
 
-        // Input handling: Create a new active particle when mouse is clicked
         if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
         {
             sf::Vector2i mousePos = sf::Mouse::getPosition(window);
@@ -66,14 +64,11 @@ int main()
         vector<pair<int, int>> newActiveParticles;
         bool particlesMoved = false;
 
-        // If there are active particles, move them
         if (!activeParticles.empty())
         {
-            // Move particles and update square states
             for (const auto& [row, col] : activeParticles)
             {
                 bool moved = false;
-                // Try to move the particle down
                 if (row + 1 < rows && !squareStates[row + 1][col])
                 {
                     squareStates[row + 1][col] = true;
@@ -82,7 +77,6 @@ int main()
                     moved = true;
                     particlesMoved = true;
                 }
-                // Try to move left-down
                 else if (col > 0 && row + 1 < rows && !squareStates[row + 1][col - 1])
                 {
                     squareStates[row + 1][col - 1] = true;
@@ -91,7 +85,6 @@ int main()
                     moved = true;
                     particlesMoved = true;
                 }
-                // Try to move right-down
                 else if (col < cols - 1 && row + 1 < rows && !squareStates[row + 1][col + 1])
                 {
                     squareStates[row + 1][col + 1] = true;
@@ -100,7 +93,6 @@ int main()
                     moved = true;
                     particlesMoved = true;
                 }
-                // If particle didn't move, draw it to static canvas
                 if (!moved) {
                     square.setFillColor(sf::Color::White);
                     square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
@@ -108,12 +100,9 @@ int main()
                     staticCanvas.draw(square);
                 }
             }
-
-            // Update active particles
             activeParticles = newActiveParticles;
 
             if (particlesMoved) {
-                // Only draw particles that just became static
                 for (const auto& [row, col] : activeParticles) {
                     bool found = false;
                     for (const auto& [newRow, newCol] : newActiveParticles) {
@@ -121,8 +110,6 @@ int main()
                             found = true;
                             break;
                         }
-                    }
-                    // If particle isn't in new active list, it became static
                     if (!found) {
                         square.setFillColor(sf::Color::White);
                         square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
