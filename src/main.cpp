@@ -5,6 +5,21 @@
 #include <random>
 using namespace std;
 
+sf::Color getHueColor(int particleCount)
+{
+    int colorShift = (particleCount / 10) % 5;
+
+    int red = 194 + colorShift * 10;
+    int green = 178 + colorShift * 5;
+    int blue = 128 + colorShift * 10;
+
+    red = std::min(255, std::max(0, red));
+    green = std::min(255, std::max(0, green));
+    blue = std::min(255, std::max(0, blue));
+
+    return sf::Color(red, green, blue);
+}
+
 int main()
 {
     int windowWidth = 800;
@@ -12,7 +27,7 @@ int main()
     int squareSize = 10;
     int rows = windowHeight / squareSize;
     int cols = windowWidth / squareSize;
-
+    int totalParticles = 0;
     sf::RenderWindow window(sf::VideoMode({ static_cast<unsigned int>(windowWidth), static_cast<unsigned int>(windowHeight) }), "Grid of Squares");
     window.setFramerateLimit(60);
 
@@ -27,7 +42,7 @@ int main()
     uniform_int_distribution<> dist(-1, 1);
 
     sf::RectangleShape square(sf::Vector2f(static_cast<float>(squareSize), static_cast<float>(squareSize)));
-       
+
     staticCanvas.clear(sf::Color::Black);
     frameBuffer.clear(sf::Color::Black);
 
@@ -35,9 +50,9 @@ int main()
     {
         for (int col = 0; col < cols; ++col)
         {
-            if (squareStates[row][col]) 
+            if (squareStates[row][col])
             {
-                square.setFillColor(sf::Color::White); 
+                square.setFillColor(getHueColor(totalParticles));
                 square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize), static_cast<float>(row * squareSize)));
                 staticCanvas.draw(square);
             }
@@ -58,6 +73,7 @@ int main()
             {
                 squareStates[row][col] = true;
                 activeParticles.emplace_back(row, col);
+                totalParticles++;
             }
         }
 
@@ -66,7 +82,7 @@ int main()
 
         if (!activeParticles.empty())
         {
-            for (const auto& [row, col] : activeParticles)
+            for (auto [row, col] : activeParticles)
             {
                 bool moved = false;
                 if (row + 1 < rows && !squareStates[row + 1][col])
@@ -93,16 +109,18 @@ int main()
                     moved = true;
                     particlesMoved = true;
                 }
-                if (!moved) {
-                    square.setFillColor(sf::Color::White);
+                if (!moved) { //Static
+                    square.setFillColor(getHueColor(totalParticles));
                     square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
                         static_cast<float>(row * squareSize)));
                     staticCanvas.draw(square);
                 }
             }
+
             activeParticles = newActiveParticles;
 
             if (particlesMoved) {
+                // Only draw particles that just became static
                 for (const auto& [row, col] : activeParticles) {
                     bool found = false;
                     for (const auto& [newRow, newCol] : newActiveParticles) {
@@ -110,8 +128,10 @@ int main()
                             found = true;
                             break;
                         }
+                    }
+                    // If particle isn't in new active list, it became static
                     if (!found) {
-                        square.setFillColor(sf::Color::White);
+                        square.setFillColor(getHueColor(totalParticles));
                         square.setPosition(sf::Vector2f(static_cast<float>(col * squareSize),
                             static_cast<float>(row * squareSize)));
                         staticCanvas.draw(square);
